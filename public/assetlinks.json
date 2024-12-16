@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.vercel.leaflet_area_calculate_bp2o.twa",
+        "sha256_cert_fingerprints": ["5F:41:D5:B1:AB:96:D5:E0:75:07:4C:D6:9B:B0:26:A1:30:59:31:F6:2A:0B:C6:B4:7E:66:11:1A:6F:BB:68:38"]
+      }
+    }]
