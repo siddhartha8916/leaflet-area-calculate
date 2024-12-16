@@ -23,8 +23,8 @@ export default defineConfig({
         name: "PolygonApp",
         short_name: "PolygonApp",
         description: "App for measuring land area offline",
-        theme_color: "#2B4652",
-        background_color: "#2B4652",
+        theme_color: "#44C4A1",
+        background_color: "#44C4A1",
         start_url: "/",
         icons: [
           { src: "logos/logo-64-64.png", sizes: "64x64", type: "image/png" },
