@@ -147,7 +147,7 @@ const options = {
       }),
     },
     rectangle: false,
-    marker: false,
+    marker: true,
   },
   edit: {
     featureGroup: editableLayers, //REQUIRED!!
