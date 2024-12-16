@@ -9,18 +9,6 @@
   <body>
     <div class="container-fluid py-md-3" style="max-width: 1200px">
       <main id="app">
-        <!-- <p>
-          This maps shows the default
-          <a
-            href="https://github.com/allartk/leaflet.offline/blob/master/docs/api.md#new-tilelayeroffline"
-            target="_blank"
-            >layer</a
-          >
-          and control provided by leaflet.offline. Click the buttons on the left
-          side to download tiles from the visible area at zoom levels 13 & 16
-          (see the script). Enable the offline tiles layer to see what is
-          already offline available.
-        </p> -->
         <h2>Polygon App</h2>
         <p>
           Total in database:
@@ -46,9 +34,19 @@
           </div>
         </div>
 
+        <!-- Input for Latitude and Longitude -->
+        <div id="latlng-container">
+          <input type="text" id="latlng-input" placeholder="Enter Latitude, Longitude" />
+          <button id="set-location-btn">Set Location</button>
+        </div>
+
         <div id="map" style="height: 75vh"></div>
       </main>
     </div>
-    <script type="module" src="/src/main.ts"></script>
+
+    <script type="module" src="src/main.ts"></script>
+
+    <!-- <div id="root"></div>
+    <script type="module" src="/src/index.tsx"></script> -->
   </body>
 </html>

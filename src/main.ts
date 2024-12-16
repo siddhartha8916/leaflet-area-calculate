@@ -1,27 +1,32 @@
 //@ts-nocheck
-import { tileLayerOffline, savetiles, SaveStatus } from 'leaflet.offline';
-import { Control, DivIcon, Map, Point } from 'leaflet';
-import debounce from 'debounce';
-import storageLayer from './storageLayer';
-import './style.css';
-import * as turf from '@turf/turf';
-import 'leaflet-draw';
+import { tileLayerOffline, savetiles, SaveStatus } from "leaflet.offline";
+import { Control, DivIcon, Map, Point } from "leaflet";
+import debounce from "debounce";
+import storageLayer from "./storageLayer";
+import "./style.css";
+import "./index.css";
+import * as turf from "@turf/turf";
+import "leaflet-draw";
 
-const urlTemplate = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+// const urlTemplate = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+const urlTemplate = "http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}";
 
-const leafletMap = new Map('map');
+// Declare a global variable for the marker
+let currentMarker: L.Marker | null = null;
+
+export const leafletMap = new Map("map");
 
 // offline baselayer, will use offline source if available
 const baseLayer = tileLayerOffline(urlTemplate, {
-  attribution: 'Map data {attribution.OpenStreetMap}',
-  subdomains: 'abc',
-  minZoom: 13,
-  maxZoom: 18,
+  attribution: "Map data Google Maps",
+  minZoom: 17,
+  maxZoom: 22,
+  subdomains: ["mt0", "mt1", "mt2", "mt3"],
 }).addTo(leafletMap);
 
 // add buttons to save tiles in area viewed
 const saveControl = savetiles(baseLayer, {
-  zoomlevels: [13, 14, 15, 16, 17, 18], // optional zoomlevels to save, default current zoomlevel
+  zoomlevels: [17, 18, 19, 20, 21, 22], // optional zoomlevels to save, default current zoomlevel
   alwaysDownload: false,
   confirm(status: SaveStatus, successCallback: Function) {
     // eslint-disable-next-line no-alert
@@ -31,7 +36,7 @@ const saveControl = savetiles(baseLayer, {
   },
   confirmRemoval(status: SaveStatus, successCallback: Function) {
     // eslint-disable-next-line no-alert
-    if (window.confirm('Remove all the tiles?')) {
+    if (window.confirm("Remove all the tiles?")) {
       successCallback();
     }
   },
@@ -40,22 +45,54 @@ const saveControl = savetiles(baseLayer, {
   rmText:
     '<i title="Remove tiles"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></i>',
 });
+
 saveControl.addTo(leafletMap);
 
-leafletMap.setView(
-  {
-    lat: 8.998864614865049,
-    lng: 38.75666524993486
-  },
-  16,
-);
+
+// Function to set the map to the user's current location and add a marker
+function setCurrentLocation() {
+  // Check if geolocation is available in the browser
+  if (navigator.geolocation) {
+    // Get the current position
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        // Extract latitude and longitude from the position object
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        // Set the map view to the user's current location
+        leafletMap.setView([lat, lng], 16); // Adjust zoom level as needed
+
+        // If a marker already exists, remove it
+        if (currentMarker) {
+          leafletMap.removeLayer(currentMarker);
+        }
+
+        // Create a new marker at the user's location
+        currentMarker = L.marker([lat, lng]).addTo(leafletMap);
+
+        // Bind a popup showing the user's location
+        currentMarker.bindPopup(`Current Location: ${lat.toFixed(5)}, ${lng.toFixed(5)}`).openPopup();
+      },
+      (error) => {
+        alert('Unable to retrieve your location. Please make sure you have location permissions enabled.');
+      }
+    );
+  } else {
+    alert('Geolocation is not supported by this browser.');
+  }
+}
+
+// Call the function to get the current location and plot the marker
+setCurrentLocation();
+
 // layer switcher control
 const layerswitcher = new Control.Layers(
   {
-    'osm (offline)': baseLayer,
+    "osm (offline)": baseLayer,
   },
   undefined,
-  { collapsed: false },
+  { collapsed: false }
 ).addTo(leafletMap);
 // add storage overlay
 storageLayer(baseLayer, layerswitcher);
@@ -64,27 +101,27 @@ storageLayer(baseLayer, layerswitcher);
 let progress: number;
 let total: number;
 const showProgress = debounce(() => {
-  document.getElementById('progressbar')!.style.width = `${
+  document.getElementById("progressbar")!.style.width = `${
     (progress / total) * 100
   }%`;
-  document.getElementById('progressbar')!.innerHTML = progress.toString();
+  document.getElementById("progressbar")!.innerHTML = progress.toString();
   if (progress === total) {
     setTimeout(
       () =>
-        document.getElementById('progress-wrapper')!.classList.remove('show'),
-      1000,
+        document.getElementById("progress-wrapper")!.classList.remove("show"),
+      1000
     );
   }
 }, 10);
 
-baseLayer.on('savestart', (e) => {
+baseLayer.on("savestart", (e) => {
   progress = 0;
   // @ts-ignore
   total = e._tilesforSave.length;
-  document.getElementById('progress-wrapper')!.classList.add('show');
-  document.getElementById('progressbar')!.style.width = '0%';
+  document.getElementById("progress-wrapper")!.classList.add("show");
+  document.getElementById("progressbar")!.style.width = "0%";
 });
-baseLayer.on('loadtileend', () => {
+baseLayer.on("loadtileend", () => {
   progress += 1;
   showProgress();
 });
@@ -93,7 +130,7 @@ const editableLayers = new L.FeatureGroup();
 leafletMap.addLayer(editableLayers);
 
 const options = {
-  position: 'topright',
+  position: "topright",
   draw: {
     polyline: false,
     circle: false,
@@ -106,7 +143,7 @@ const options = {
       edit: true,
       icon: new DivIcon({
         iconSize: new Point(10, 10),
-        className: 'leaflet-div-icon leaflet-editing-icon',
+        className: "leaflet-div-icon leaflet-editing-icon",
       }),
     },
     rectangle: false,
@@ -117,8 +154,8 @@ const options = {
     remove: true,
   },
 };
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-declare const L: any; // --> Works
+// // eslint-disable-next-line @typescript-eslint/no-explicit-any
+// declare const L: any; // --> Works
 
 const drawControl = new L.Control.Draw(options);
 leafletMap.addControl(drawControl);
@@ -128,15 +165,15 @@ leafletMap.on(L.Draw.Event.CREATED, function (e) {
     layer = e.layer;
 
   // If the drawn object is a polygon
-  if (type === 'polygon') {
+  if (type === "polygon") {
     const polygonLayer = layer.toGeoJSON();
 
-    console.log('polygonLayer :>> ', polygonLayer); // For debugging
+    console.log("polygonLayer :>> ", polygonLayer); // For debugging
 
     const latlngs = polygonLayer.geometry.coordinates;
     const polygon = turf.polygon(latlngs);
     const area = turf.area(polygon);
-    console.log('Area in square meters :>> ', area); // Log the area
+    console.log("Area in square meters :>> ", area); // Log the area
     var popup = L.popup().setContent(`Area: ${area.toFixed(2)} m²`);
     layer.bindPopup(popup).openPopup();
   }
@@ -150,12 +187,12 @@ leafletMap.on(L.Draw.Event.EDITED, function (e) {
 
   layers.eachLayer(function (layer) {
     // You can access each edited layer here
-    console.log('Layer edited:', layer);
+    console.log("Layer edited:", layer);
     const polygonLayer = layer.toGeoJSON();
     const latlngs = polygonLayer.geometry.coordinates;
     const polygon = turf.polygon(latlngs);
     const area = turf.area(polygon);
-    console.log('Area in square meters :>> ', area); // Log the area
+    console.log("Area in square meters :>> ", area); // Log the area
     var popup = L.popup().setContent(`Area: ${area.toFixed(2)} m²`);
     layer.bindPopup(popup).openPopup();
   });
@@ -167,6 +204,44 @@ leafletMap.on(L.Draw.Event.DELETED, function (e) {
 
   layers.eachLayer(function (layer) {
     // Handle layer deletion
-    console.log('Layer deleted:', layer);
+    console.log("Layer deleted:", layer);
   });
 });
+
+// Function to set map location based on latitude and longitude input
+function setMapLocation(lat: number, lng: number) {
+  // Set the map's view to the new location
+  leafletMap.setView([lat, lng], 16); // You can adjust the zoom level if needed
+
+  // If a marker already exists, remove it
+  if (currentMarker) {
+    leafletMap.removeLayer(currentMarker);
+  }
+
+  // Create a new marker at the specified latitude and longitude
+  currentMarker = L.marker([lat, lng]).addTo(leafletMap);
+  currentMarker.bindPopup(`Location: ${lat}, ${lng}`).openPopup();
+}
+
+// Add event listener to the "Set Location" button
+document.getElementById('set-location-btn')?.addEventListener('click', () => {
+  // Get the latitude and longitude string from the input field
+  const latlngInput = (document.getElementById('latlng-input') as HTMLInputElement).value;
+
+  // Split the input string by the comma to extract lat and lng
+  const [latStr, lngStr] = latlngInput.split(',');
+
+  // Parse the latitude and longitude strings into numbers
+  const lat = parseFloat(latStr.trim());
+  const lng = parseFloat(lngStr.trim());
+
+  // Validate if the latitude and longitude are valid numbers
+  if (!isNaN(lat) && !isNaN(lng)) {
+    setMapLocation(lat, lng);  // Call the function to update map view and add the marker
+  } else {
+    alert('Please enter valid latitude and longitude in the format: "latitude, longitude"');
+  }
+});
+
+
+export default leafletMap;
