@@ -46,8 +46,17 @@ const saveControl = savetiles(baseLayer, {
     '<i title="Remove tiles"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></i>',
 });
 
-saveControl.addTo(leafletMap);
+// Create a custom SVG icon for the marker
+const customIcon = L.icon({
+  iconUrl: "location.svg",
+  iconSize: [38, 95], // size of the icon
+  shadowSize: [50, 64], // size of the shadow
+  iconAnchor: [22, 94], // point of the icon which will correspond to marker's location
+  shadowAnchor: [4, 62], // the same for the shadow
+  popupAnchor: [-3, -76], // point from which the popup should open relative to the iconAnchor
+});
 
+saveControl.addTo(leafletMap);
 
 // Function to set the map to the user's current location and add a marker
 function setCurrentLocation() {
@@ -69,17 +78,23 @@ function setCurrentLocation() {
         }
 
         // Create a new marker at the user's location
-        currentMarker = L.marker([lat, lng]).addTo(leafletMap);
+        currentMarker = L.marker([lat, lng], { icon: customIcon }).addTo(
+          leafletMap
+        );
 
         // Bind a popup showing the user's location
-        currentMarker.bindPopup(`Current Location: ${lat.toFixed(5)}, ${lng.toFixed(5)}`).openPopup();
+        currentMarker
+          .bindPopup(`Current Location: ${lat.toFixed(5)}, ${lng.toFixed(5)}`)
+          .openPopup();
       },
       (error) => {
-        alert('Unable to retrieve your location. Please make sure you have location permissions enabled.');
+        alert(
+          "Unable to retrieve your location. Please make sure you have location permissions enabled."
+        );
       }
     );
   } else {
-    alert('Geolocation is not supported by this browser.');
+    alert("Geolocation is not supported by this browser.");
   }
 }
 
@@ -219,17 +234,19 @@ function setMapLocation(lat: number, lng: number) {
   }
 
   // Create a new marker at the specified latitude and longitude
-  currentMarker = L.marker([lat, lng]).addTo(leafletMap);
+  currentMarker = L.marker([lat, lng], { icon: customIcon }).addTo(leafletMap);
   currentMarker.bindPopup(`Location: ${lat}, ${lng}`).openPopup();
 }
 
 // Add event listener to the "Set Location" button
-document.getElementById('set-location-btn')?.addEventListener('click', () => {
+document.getElementById("set-location-btn")?.addEventListener("click", () => {
   // Get the latitude and longitude string from the input field
-  const latlngInput = (document.getElementById('latlng-input') as HTMLInputElement).value;
+  const latlngInput = (
+    document.getElementById("latlng-input") as HTMLInputElement
+  ).value;
 
   // Split the input string by the comma to extract lat and lng
-  const [latStr, lngStr] = latlngInput.split(',');
+  const [latStr, lngStr] = latlngInput.split(",");
 
   // Parse the latitude and longitude strings into numbers
   const lat = parseFloat(latStr.trim());
@@ -237,11 +254,12 @@ document.getElementById('set-location-btn')?.addEventListener('click', () => {
 
   // Validate if the latitude and longitude are valid numbers
   if (!isNaN(lat) && !isNaN(lng)) {
-    setMapLocation(lat, lng);  // Call the function to update map view and add the marker
+    setMapLocation(lat, lng); // Call the function to update map view and add the marker
   } else {
-    alert('Please enter valid latitude and longitude in the format: "latitude, longitude"');
+    alert(
+      'Please enter valid latitude and longitude in the format: "latitude, longitude"'
+    );
   }
 });
-
 
 export default leafletMap;
