@@ -9,7 +9,9 @@ import * as turf from "@turf/turf";
 import "leaflet-draw";
 
 // const urlTemplate = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-const urlTemplate = "http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}";
+// const urlTemplate = "http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}";
+const urlTemplate = "http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}";
+// const urlTemplate = "http://{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}";
 
 // Declare a global variable for the marker
 let currentMarker: L.Marker | null = null;
