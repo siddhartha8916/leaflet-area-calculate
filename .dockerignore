@@ -1,0 +1,9 @@
+node_modules
+.git
+*.log
+.env
+.eslintrc
+.gitignore
+.prettierrc.json
+jest.config.js
+nodemon.json

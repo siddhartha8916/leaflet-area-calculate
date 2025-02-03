@@ -1,0 +1,26 @@
+{
+  "name": "perimeter-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 3700 --host",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@types/leaflet": "^1.9.16",
+    "@types/leaflet-draw": "^1.0.11",
+    "typescript": "~5.6.2",
+    "vite": "^6.0.5",
+    "vite-plugin-pwa": "^0.21.1"
+  },
+  "dependencies": {
+    "@turf/turf": "^7.2.0",
+    "bootstrap": "^5.3.3",
+    "debounce": "^2.2.0",
+    "leaflet": "^1.9.4",
+    "leaflet-draw": "^1.0.4",
+    "leaflet.offline": "^3.1.0"
+  }
+}

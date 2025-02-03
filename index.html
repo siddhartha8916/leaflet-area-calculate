@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/logos/logo-48-48.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Polygon App</title>
+  </head>
+  <body>
+    <div class="container-fluid py-md-3" style="max-width: 1200px">
+      <main id="app">
+        <h2>Polygon App</h2>
+        <p>
+          Total in database:
+          <a href="list.html"><span id="storage"></span> files</a>
+        </p>
+
+        <div id="progress-wrapper" class="collapse pb-2">
+          <div class="d-flex">
+            <div class="">Download Progress</div>
+            <div class="flex-grow-1 ml-2 my-1">
+              <div id="progress" class="progress">
+                <div
+                  id="progressbar"
+                  class="progress-bar progress-bar-striped progress-bar-animated"
+                  role="progressbar"
+                  style="width: 0%"
+                  aria-valuenow="0"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input for Latitude and Longitude -->
+        <div id="latlng-container">
+          <input
+            type="text"
+            id="latlng-input"
+            placeholder="Enter Latitude, Longitude"
+          />
+          <button id="set-location-btn">Set Location</button>
+          <button id="set-coordinates">Set Coordinates</button>
+          <button id="reset">Reset</button>
+          <div id="area-result"></div>
+        </div>
+
+        <div id="coordinate-display">
+          <p id="coordinates">Coordinates</p>
+          <div id="loading-spinner" class="spinner" style="display:none;"></div>
+          <div id="user-coordinates-list">
+            <h4>User Coordinates:</h4>
+            <ul id="coordinates-list"></ul>
+          </div>
+        </div>
+        
+
+        <div id="map" style="height: 75vh" class="mt-4"></div>
+      </main>
+    </div>
+    <script type="module" src="/src/home/main.ts"></script>
+  </body>
+</html>
