@@ -8,16 +8,7 @@ import "leaflet-draw";
 import "../style.css";
 import "../main.css";
 
-// const setCoordinatesBtn = document.getElementById(
-//   "set-coordinates"
-// ) as HTMLElement;
-// const resetBtn = document.getElementById("reset") as HTMLElement;
-// const areaResult = document.getElementById("area-result") as HTMLElement;
-
-// const urlTemplate = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-// const urlTemplate = "http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}";
 const urlTemplate = "https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}";
-// const urlTemplate = "http://{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}";
 
 let currentMarker: L.Marker | null = null;
 
@@ -65,50 +56,61 @@ const customIcon = L.icon({
 
 saveControl.addTo(leafletMap);
 
+function getCurrentLatLong(): Promise<GeolocationPosition> {
+  return new Promise((resolve, reject) => {
+    // Check if geolocation is available in the browser
+    if (navigator.geolocation) {
+      // Get the current position
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          // Extract latitude and longitude from the position object
+          resolve(position);
+        },
+        () => {
+          reject(
+            "Unable to retrieve your location. Please make sure you have location permissions enabled."
+          );
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 0,
+        }
+      );
+    } else {
+      reject("Geolocation is not supported by this browser.");
+    }
+  });
+}
+
 // Function to set the map to the user's current location and add a marker
 function setCurrentLocation() {
-  // Check if geolocation is available in the browser
-  if (navigator.geolocation) {
-    // Get the current position
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        // Extract latitude and longitude from the position object
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
+  getCurrentLatLong()
+    .then((position) => {
+      // Set the map view to the user's current location
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      leafletMap.setView([lat, lng], 16); // Adjust zoom level as needed
 
-        // Set the map view to the user's current location
-        leafletMap.setView([lat, lng], 16); // Adjust zoom level as needed
-
-        // If a marker already exists, remove it
-        if (currentMarker) {
-          leafletMap.removeLayer(currentMarker);
-        }
-
-        // Create a new marker at the user's location
-        currentMarker = L.marker([lat, lng], { icon: customIcon }).addTo(
-          leafletMap
-        );
-
-        // Bind a popup showing the user's location
-        currentMarker
-          .bindPopup(`Current Location: ${lat.toFixed(5)}, ${lng.toFixed(5)}`)
-          .openPopup();
-      },
-      (error) => {
-        alert(
-          "Unable to retrieve your location. Please make sure you have location permissions enabled."
-        );
-        console.log({ error });
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 5000,
-        maximumAge: 0,
+      // If a marker already exists, remove it
+      if (currentMarker) {
+        leafletMap.removeLayer(currentMarker);
       }
-    );
-  } else {
-    alert("Geolocation is not supported by this browser.");
-  }
+
+      // Create a new marker at the user's location
+      currentMarker = L.marker([lat, lng], { icon: customIcon }).addTo(
+        leafletMap
+      );
+
+      // Bind a popup showing the user's location
+      currentMarker
+        .bindPopup(`Current Location: ${lat.toFixed(5)}, ${lng.toFixed(5)}`)
+        .openPopup();
+    })
+    .catch((error) => {
+      alert(error);
+      console.log(error);
+    });
 }
 
 // Call the function to get the current location and plot the marker
@@ -277,11 +279,51 @@ document.getElementById("set-location-btn")?.addEventListener("click", () => {
 const setCoordinatesBtn = document.getElementById(
   "set-coordinates"
 ) as HTMLElement;
-let userCoordinates: L.LatLng[] = []; // To store coordinates
-let currentPolygon: L.Polygon | null = null; // For the polygon
+let userCoordinates: L.LatLng[] = [];
+let currentPolygon: L.Polygon | null = null;
+let userPosition: GeolocationPosition[] = [];
 
 // Function to handle the button click to set coordinates
+async function sendCoordinatesToApi() {
+  // Get session ID from local storage
+  console.log("Sending data to API");
+  const sessionId = localStorage.getItem("session-id");
+  document.getElementById("sessionId")!.innerHTML = sessionId?.toString() || "";
+
+  // Prepare request payload
+  const payload = {
+    sessionId: sessionId,
+    coordinates: userPosition,
+  };
+
+  try {
+    const response = await fetch("/api/v1/coordinates", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error sending coordinates:", error);
+    throw error;
+  }
+}
+
 setCoordinatesBtn.addEventListener("click", function () {
+  // Check if session-id exists in localStorage, if not create new one
+  if (!localStorage.getItem("session-id")) {
+    const newSessionId = crypto.randomUUID();
+    localStorage.setItem("session-id", newSessionId);
+    document.getElementById("sessionId")!.innerHTML = newSessionId?.toString() || "";
+  }
   const loadingSpinner = document.getElementById(
     "loading-spinner"
   ) as HTMLElement;
@@ -294,80 +336,70 @@ setCoordinatesBtn.addEventListener("click", function () {
   loadingSpinner.style.display = "inline-block";
   coordinatesText.style.display = "none";
 
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        const latlng = L.latLng(lat, lng);
+  // Use the getLatLong function to get the coordinates
+  getCurrentLatLong()
+    .then((position) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      const latlng = L.latLng(lat, lng);
 
-        // Add the coordinate to the array
-        userCoordinates.push(latlng);
+      // Add the coordinate to the array
+      userCoordinates.push(latlng);
+      userPosition.push(position);
+      console.log(userCoordinates);
+      sendCoordinatesToApi().then((data) => {
+        console.log("data :>> ", data);
+      });
 
-        // Add a marker for the set coordinate
-        L.marker([lat, lng], { icon: customIcon }).addTo(leafletMap);
+      // Add a marker for the set coordinate
+      L.marker([lat, lng], { icon: customIcon }).addTo(leafletMap);
 
-        // If the user has clicked enough times to form a polygon
-        if (userCoordinates.length > 2) {
-          // Remove the previous polygon if it exists
-          if (currentPolygon) {
-            leafletMap.removeLayer(currentPolygon);
-          }
-
-          // Create the polygon from the set coordinates
-          currentPolygon = L.polygon(userCoordinates).addTo(leafletMap);
-
-          // Calculate the area using Turf.js
-          const polygonGeoJSON = currentPolygon.toGeoJSON();
-          const area = turf.area(polygonGeoJSON); // area in square meters
-
-          // Display the area in a popup
-          currentPolygon.bindPopup(`Area: ${area.toFixed(2)} m²`).openPopup();
+      // If the user has clicked enough times to form a polygon
+      if (userCoordinates.length > 2) {
+        // Remove the previous polygon if it exists
+        if (currentPolygon) {
+          leafletMap.removeLayer(currentPolygon);
         }
 
-        // Optionally, adjust the map view to center on the latest coordinate
-        leafletMap.setView(latlng, 16);
-        // Update the coordinates text
-        coordinatesText.innerHTML = `Latitude: ${lat.toFixed(
-          5
-        )}, Longitude: ${lng.toFixed(5)}`;
+        // Create the polygon from the set coordinates
+        currentPolygon = L.polygon(userCoordinates).addTo(leafletMap);
 
-        // Update the list of user coordinates
-        const li = document.createElement("li");
-        li.textContent = `Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`;
-        coordinatesList.appendChild(li);
+        // Calculate the area using Turf.js
+        const polygonGeoJSON = currentPolygon.toGeoJSON();
+        const area = turf.area(polygonGeoJSON);
 
-        // Hide the spinner and show the coordinates text
-        loadingSpinner.style.display = "none";
-        coordinatesText.style.display = "block";
-      },
-      (error) => {
-        // Handle errors (e.g., permission denied or location unavailable)
-        alert("Error fetching location: " + error.message);
-
-        // Hide the spinner and show an error message
-        loadingSpinner.style.display = "none";
-        coordinatesText.innerHTML = "Unable to retrieve location.";
-        coordinatesText.style.display = "block";
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 5000,
-        maximumAge: 0,
+        // Display the area in a popup
+        currentPolygon.bindPopup(`Area: ${area.toFixed(2)} m²`).openPopup();
       }
-    );
-  } else {
-    alert("Geolocation is not supported by this browser.");
-    // Hide the spinner and show an error message
-    loadingSpinner.style.display = "none";
-    coordinatesText.innerHTML = "Unable to retrieve location.";
-    coordinatesText.style.display = "block";
-  }
+
+      // Optionally, adjust the map view to center on the latest coordinate
+      leafletMap.setView(latlng, 16);
+
+      // Update the coordinates text
+      coordinatesText.innerHTML = `Latitude: ${lat.toFixed(
+        5
+      )}, Longitude: ${lng.toFixed(5)}`;
+
+      // Update the list of user coordinates
+      const li = document.createElement("li");
+      li.textContent = `Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`;
+      coordinatesList.appendChild(li);
+    })
+    .catch((error) => {
+      // Handle errors (e.g., permission denied or location unavailable)
+      alert("Error fetching location: " + error);
+      coordinatesText.innerHTML = "Unable to retrieve location.";
+    })
+    .finally(() => {
+      loadingSpinner.style.display = "none";
+      coordinatesText.style.display = "block";
+    });
 });
 
 const resetBtn = document.getElementById("reset") as HTMLElement;
 resetBtn.addEventListener("click", function () {
-  // Clear coordinates and polygon
+  // Clear coordinates and polygon and session id
+  localStorage.removeItem("session-id");
   userCoordinates = [];
   if (currentPolygon) {
     leafletMap.removeLayer(currentPolygon);

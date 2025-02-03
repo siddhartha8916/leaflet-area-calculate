@@ -1,0 +1,19 @@
+version: '3'
+services:
+  perimeterapp-frontend:
+    container_name: perimeterapp-frontend
+    image: perimeterapp-frontend:latest
+    volumes:
+      - ./nginx:/etc/nginx/conf.d
+    ports:
+      - "3200:3000"
+    depends_on:
+      - perimeterapp-backend
+
+  perimeterapp-backend:
+    container_name: perimeterapp-backend
+    image: perimeterapp-backend:latest
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./logs:/usr/src/app/logs  # Mount EC2 instance's "logs" directory to the container's "logs"

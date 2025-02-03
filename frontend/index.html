@@ -9,7 +9,10 @@
   <body>
     <div class="container-fluid py-md-3" style="max-width: 1200px">
       <main id="app">
-        <h2>Polygon App</h2>
+        <div class="d-flex align-items-center justify-content-between">
+          <h2>Polygon App</h2>
+          <p id="sessionId"></p>
+        </div>
         <p>
           Total in database:
           <a href="list.html"><span id="storage"></span> files</a>
@@ -49,13 +52,12 @@
 
         <div id="coordinate-display">
           <p id="coordinates">Coordinates</p>
-          <div id="loading-spinner" class="spinner" style="display:none;"></div>
+          <div id="loading-spinner" class="spinner" style="display: none"></div>
           <div id="user-coordinates-list">
             <h4>User Coordinates:</h4>
             <ul id="coordinates-list"></ul>
           </div>
         </div>
-        
 
         <div id="map" style="height: 75vh" class="mt-4"></div>
       </main>

@@ -1,4 +1,4 @@
-FROM node:lts-alpine AS base
+FROM node:20-alpine AS base
 
 WORKDIR /app
 
@@ -13,11 +13,7 @@ RUN npm run build
 
 FROM nginx:alpine
 
-EXPOSE 80
+EXPOSE 3000
 
 COPY --from=base /app/dist /usr/share/nginx/html
-COPY nginx-conf/nginx.conf /etc/nginx/nginx.conf
-
-# Start NGINX in the foreground
-CMD ["nginx", "-g", "daemon off;"]
 
