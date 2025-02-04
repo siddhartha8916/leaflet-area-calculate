@@ -7,6 +7,7 @@ import * as turf from "@turf/turf";
 import "leaflet-draw";
 import "../style.css";
 import "../main.css";
+import { calculatePolygonArea } from "./utils";
 
 const urlTemplate = "https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}";
 
@@ -64,6 +65,9 @@ function getCurrentLatLong(): Promise<GeolocationPosition> {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           // Extract latitude and longitude from the position object
+          if (position.coords.altitude === null) {
+            reject("Unable to retrieve your altitude. Please try again");
+          }
           resolve(position);
         },
         () => {
@@ -322,8 +326,10 @@ setCoordinatesBtn.addEventListener("click", function () {
   if (!localStorage.getItem("session-id")) {
     const newSessionId = crypto.randomUUID();
     localStorage.setItem("session-id", newSessionId);
-    document.getElementById("sessionId")!.innerHTML = newSessionId?.toString() || "";
+    document.getElementById("sessionId")!.innerHTML =
+      newSessionId?.toString() || "";
   }
+
   const loadingSpinner = document.getElementById(
     "loading-spinner"
   ) as HTMLElement;
@@ -384,6 +390,9 @@ setCoordinatesBtn.addEventListener("click", function () {
       const li = document.createElement("li");
       li.textContent = `Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`;
       coordinatesList.appendChild(li);
+      if (userCoordinates.length > 2) {
+        getAreaBtn.style.display = "block";
+      }
     })
     .catch((error) => {
       // Handle errors (e.g., permission denied or location unavailable)
@@ -406,6 +415,43 @@ resetBtn.addEventListener("click", function () {
   }
   currentPolygon = null;
   setCurrentLocation();
+});
+
+const getAreaBtn = document.getElementById("get-area") as HTMLElement;
+getAreaBtn.style.display = "none";
+
+getAreaBtn.addEventListener("click", () => {
+  if (currentPolygon && userCoordinates.length > 2) {
+    // Calculate area using Lat/Long from Turf.js
+    const polygonGeoJSON = currentPolygon.toGeoJSON();
+    const area = turf.area(polygonGeoJSON); // Area in square meters
+
+    // Display the area by Lat/Long
+    (
+      document.getElementById("area-result-latlong") as HTMLElement
+    ).innerHTML = `Area by Lat Long: ${area.toFixed(2)}m²`;
+
+    // Calculate the area based on altitude differences (from your own function)
+    const polygonArea = calculatePolygonArea(userPosition);
+
+    // Display the area by Altitude
+    (
+      document.getElementById("area-result-polygon") as HTMLElement
+    ).innerHTML = `Area By Altitude: ${polygonArea.toFixed(2)}m²`;
+
+    // Calculate the difference percentage
+    const areaDifference = Math.abs(area - polygonArea);
+    const percentageDifference = (areaDifference / area) * 100;
+
+    // If the difference is greater than 5%, show an alert
+    if (percentageDifference > 5) {
+      alert(
+        `Warning: The difference in area calculations exceeds 5%. Lat/Long area: ${area.toFixed(
+          2
+        )}m², Altitude-based area: ${polygonArea.toFixed(2)}m²`
+      );
+    }
+  }
 });
 
 export default leafletMap;
